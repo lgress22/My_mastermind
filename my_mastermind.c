@@ -31,44 +31,53 @@ int isValidInput(char* input) {
 int main() {
     int code[CODE_LENGTH];
     generateCode(code);
+    printf("The secret code is: %d %d %d %d\n", code[0], code[1], code[2], code[3]);
     int guesses = 0;
     char input[CODE_LENGTH + 1];
     int exactMatches, misplaced;
     printf("Will you find the secret code?\n");
+
+    
+
     while (guesses < MAX_GUESSES) {
-        printf("Please enter a valid guess\n");
-        int bytes_read = read(STDIN_FILENO, input, CODE_LENGTH + 1);
-        if (bytes_read <= 0) {
-            break;
-        }
-        input[bytes_read - 1] = '\0'; // remove the trailing newline
-        if (!isValidInput(input)) {
-            printf("Wrong Input!\n");
-            continue;
-        }
-        // compare the input to the code and print the result
-        exactMatches = 0;
-        misplaced = 0;
-        for (int i = 0; i < CODE_LENGTH; i++) {
-            if (code[i] == input[i] - '0') {
-                exactMatches++;
-            } else {
-                for (int j = 0; j < CODE_LENGTH; j++) {
-                    if (i != j && code[i] == input[j] - '0') {
-                        misplaced++;
-                        break;
-                    }
+    printf("Please enter a valid guess\n");
+    int bytes_read = read(STDIN_FILENO, input, CODE_LENGTH + 1);
+    if (bytes_read == 0) {
+        printf("\nExit\n");
+        return 0;
+    } else if (bytes_read < 0) {
+        printf("Error reading input. Exiting...\n");
+        return 1;
+    }
+    input[bytes_read - 1] = '\0'; // remove the trailing newline
+    if (!isValidInput(input)) {
+        printf("Wrong Input!\n");
+        continue;
+    }
+    // compare the input to the code and print the result
+    exactMatches = 0;
+    misplaced = 0;
+    for (int i = 0; i < CODE_LENGTH; i++) {
+        if (code[i] == input[i] - '0') {
+            exactMatches++;
+        } else {
+            for (int j = 0; j < CODE_LENGTH; j++) {
+                if (i != j && code[i] == input[j] - '0') {
+                    misplaced++;
+                    break;
                 }
             }
         }
-        if (exactMatches == CODE_LENGTH) {
-            printf("Congratz! You did it!\n");
-            return 0;
-        } else {
-            printf("%d exact matches and %d misplaced pieces\n", exactMatches, misplaced);
-        }
-        guesses++;
     }
+    if (exactMatches == CODE_LENGTH) {
+        printf("Congratz! You did it!");
+        return 0;
+    } else {
+        printf("\nWell placed pieces: %d\nMisplaced pieces: %d\n\n", exactMatches, misplaced);
+    }
+    guesses++;
+}
+
     printf("Sorry, you lost. The code was: %d %d %d %d\n", code[0], code[1], code[2], code[3]);
     return 0;
 }
