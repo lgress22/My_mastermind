@@ -1,29 +1,46 @@
 #include "mastermind.h"
 
+
 #define CODE_LENGTH 4
 #define MAX_GUESSES 10
+#define NUM_COLORS 9
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#define CODE_LENGTH 4
 #define NUM_COLORS 9
 
 void generateCode(int* code) {
     srand(time(NULL));
     for (int i = 0; i < CODE_LENGTH; i++) {
-        code[i] = rand() % NUM_COLORS;
+        int unique = 0;
+        while (!unique) {
+            unique = 1;
+            code[i] = rand() % NUM_COLORS;
+            for (int j = 0; j < i; j++) {
+                if (code[i] == code[j]) {
+                    unique = 0;
+                    break;
+                }
+            }
+        }
     }
 }
 
 int isValidInput(char* input) {
-    int len = strlen(input);
-    if (len != CODE_LENGTH) {
+    int len = strlen(input); // get the length of the input string
+    if (len != CODE_LENGTH) { // if the length is not equal to the code length, the input is invalid
         return 0;
     }
-    for (int i = 0; i < len; i++) {
-        if (input[i] < '0' || input[i] > '8') {
+    for (int i = 0; i < len; i++) { // iterate over each character in the input string
+        if (input[i] < '0' || input[i] > '8') { // if the character is not a number between 0 and 8, the input is invalid
             return 0;
         }
     }
-    return 1;
+    return 1; // if the input passes all checks, it is valid
 }
-
 
 int main(int argc, char *argv[]) {
     int code[CODE_LENGTH];
