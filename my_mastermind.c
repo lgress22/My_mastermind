@@ -1,139 +1,105 @@
 #include "mastermind.h"
 
 
-#define CODE_LENGTH 4
-#define MAX_GUESSES 10
 #define NUM_COLORS 9
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-
 #define CODE_LENGTH 4
-#define NUM_COLORS 9
+#define MAX_ATTEMPTS 10
 
-void generateCode(int* code) {
-    srand(time(NULL));
+void generate_code(char* code) {
+    int used[NUM_COLORS] = {0};
+    srand(time(NULL)); // Seed the random number generator
     for (int i = 0; i < CODE_LENGTH; i++) {
-        int unique = 0;
-        while (!unique) {
-            unique = 1;
-            code[i] = rand() % NUM_COLORS;
-            for (int j = 0; j < i; j++) {
-                if (code[i] == code[j]) {
-                    unique = 0;
-                    break;
-                }
-            }
-        }
+        int color;
+        do {
+            color = rand() % NUM_COLORS;
+        } while (used[color]);
+        used[color] = 1;
+        code[i] = '0' + color;
     }
+    code[CODE_LENGTH] = '\0';
 }
 
-int isValidInput(char* input) {
-    int len = strlen(input); // get the length of the input string
-    if (len != CODE_LENGTH) { // if the length is not equal to the code length, the input is invalid
-        return 0;
-    }
-    for (int i = 0; i < len; i++) { // iterate over each character in the input string
-        if (input[i] < '0' || input[i] > '8') { // if the character is not a number between 0 and 8, the input is invalid
-            return 0;
-        }
-    }
-    return 1; // if the input passes all checks, it is valid
-}
 
-int main(int argc, char *argv[]) {
-    int code[CODE_LENGTH];
-    int max_guesses = MAX_GUESSES;
-    // Check for command line arguments
-    if (argc > 1) {
-        // Loop through the arguments
-        for (int i = 1; i < argc; i += 2) {
-            // If the argument is for the code
-            if (strcmp(argv[i], "-c") == 0) {
-                // parse the code from the argument
-                // Check the length of the code
-                if (strlen(argv[i+1]) != CODE_LENGTH) {
-                    printf("Invalid code length. Using a random code.\n");
-                    // Generate a random code if the length is not valid
-                    generateCode(code);
-                } else {
-                    // Parse the code if the length is valid
-                    for (int j = 0; j < CODE_LENGTH; j++) {
-                        if (argv[i+1][j] < '0' || argv[i+1][j] > '8') {
-                            printf("Invalid code. Using a random code.\n");
-                            // Generate a random code if the code is not valid
-                            generateCode(code);
-                            break;
-                        }
-                        // Convert the character to an integer
-                        code[j] = argv[i+1][j] - '0';
-                    }
-                }
-            // If the argument is for the number of guesses
-            } else if (strcmp(argv[i], "-t") == 0) {
-                // parse the number of guesses from the argument
-                // Convert the argument to an integer
-                max_guesses = atoi(argv[i+1]);
-                if (max_guesses <= 0) {
-                    printf("Invalid number of attempts. Using the default value: %d\n", MAX_GUESSES);
-                    max_guesses = MAX_GUESSES;
-                }
-            } else {
-                printf("Unknown parameter: %s\n", argv[i]);
-            }
-        }
-    } else {
-        // Generate a random code if no arguments were given
-        generateCode(code);
+
+int validate_input(char* input_str) {
+    // Check if input_str is exactly 4 characters long
+    if (strlen(input_str) != CODE_LENGTH+1) {
+        return -1;
     }
     
-    printf("Will you find the secret code?\n");
+    // Check if each character in input_str is a digit
+    for (int i = 0; i < CODE_LENGTH; i++) {
+        if (!isdigit((unsigned char)input_str[i]) || input_str[i] - '0' > NUM_COLORS - 1) {
+            return -1;
+        }
+    }
     
-    int guesses = 0;
-    char input[CODE_LENGTH + 1];
-    int exactMatches, misplaced;
+    return 0;
+}
 
 
-    while (guesses < max_guesses) { // loop until the user runs out of guesses
-    printf("Please enter a valid guess\n");
-    int bytes_read = read(STDIN_FILENO, input, CODE_LENGTH + 1); // read user input
-    if (bytes_read == 0) { // user entered no input
-        printf("\nExit\n"); // print exit message
-        return 0; // exit program with success status code
-    } else if (bytes_read < 0) { // error reading input
-        printf("Error reading input. Exiting...\n"); // print error message
-        return 1; // exit program with error status code
+int count_well_placed(char* guess, char* code) {
+    int count = 0;
+    for (int i = 0; i < CODE_LENGTH; i++) {
+        if (guess[i] == code[i]) {
+            count++;
+        }
     }
-    input[bytes_read - 1] = '\0'; // remove the trailing newline character from user input
-    if (!isValidInput(input)) { // user input is not valid (not 4 digits)
-        printf("Wrong Input!\n"); // print message notifying user of invalid input
-        continue; // start the next iteration of the loop (skip the rest of the code block)
-    }
-    // compare the user's input to the code and print the result
-    exactMatches = 0; // reset the exactMatches counter for this guess
-    misplaced = 0; // reset the misplaced counter for this guess
-    for (int i = 0; i < CODE_LENGTH; i++) { // loop over each digit in the code and user input
-        if (code[i] == input[i] - '0') { // if the digits match exactly
-            exactMatches++; // increment the exactMatches counter
-        } else { // if the digits do not match exactly
-            for (int j = 0; j < CODE_LENGTH; j++) { // loop over each digit in the user input again
-                if (i != j && code[i] == input[j] - '0') { // if the digit appears elsewhere in the user input
-                    misplaced++; // increment the misplaced counter
-                    break; // break out of the inner loop
-                }
+    return count;
+}
+
+int count_misplaced(char* guess, char* code) {
+    int count = 0;
+    for (int i = 0; i < CODE_LENGTH; i++) {
+        for (int j = 0; j < CODE_LENGTH; j++) {
+            if (i != j && guess[i] == code[j]) {
+                count++;
             }
         }
     }
-    if (exactMatches == CODE_LENGTH) { // if the user guessed the code correctly
-        printf("Congratz! You did it!"); // print congratulatory message
-        return 0; // exit program with success status code
-    } else { // if the user did not guess the code correctly
-        printf("\nWell placed pieces: %d\nMisplaced pieces: %d\n\n", exactMatches, misplaced); // print the number of exact and misplaced matches
-    }
-    guesses++; // increment the number of guesses the user has made
+    return count;
 }
 
-printf("Sorry, you lost. The code was: %d %d %d %d\n", code[0], code[1], code[2], code[3]); // print message telling user they lost and reveal the code
-return 0; // exit program with success status code
+int main(int argc, char** argv) {
+    char code[CODE_LENGTH+1];
+    int attempts_left = MAX_ATTEMPTS;
+    generate_code(code);
+
+    // Parse command line arguments
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-c") == 0 && i < argc-1) {
+            strncpy(code, argv[i+1], CODE_LENGTH+1);
+        } else if (strcmp(argv[i], "-t") == 0 && i < argc-1) {
+            attempts_left = atoi(argv[i+1]);
+        }
+    }
+
+    // Main game loop
+    printf("Secret Code: %s\n", code);
+    printf("Will you find the secret code? \nPlease enter a valid guess.\n");
+    while (attempts_left > 0) {
+        char guess[CODE_LENGTH+2];
+        //printf("\nPlease enter a valid guess: ");
+
+        // Check the validity of the input
+        if (read(STDIN_FILENO, guess, CODE_LENGTH+2) < CODE_LENGTH+1 || guess[CODE_LENGTH] != '\n' || validate_input(guess) != 0) {
+            fprintf(stderr, "Wrong input!\n");
+            continue;
+        }
+
+        // The input is valid, proceed with the game logic
+        int well_placed = count_well_placed(guess, code);
+        int misplaced = count_misplaced(guess, code);
+        printf("Well placed pieces: %d\nMisplaced pieces: %d\n", well_placed, misplaced);
+        if(well_placed == CODE_LENGTH){
+            printf("Congratz! You did it!");
+            exit(0);
+        }
+        printf("Please enter a valid guess:\n");
+        attempts_left--;
+    }
+
+    printf("Sorry, you ran out of attempts. The secret code was %s.\n", code);
+
+return 0;
 }
