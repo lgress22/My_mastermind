@@ -57,6 +57,10 @@ int count_misplaced(char* guess, char* code) {
             }
         }
     }
+    if(count == CODE_LENGTH){
+            printf("Congratz! You did it!\n");
+            exit(0);
+        }
     return count;
 }
 
@@ -76,30 +80,37 @@ int main(int argc, char** argv) {
 
     // Main game loop
     printf("Secret Code: %s\n", code);
-    printf("Will you find the secret code? \nPlease enter a valid guess.\n");
+    printf("Will you find the secret code?\nPlease enter a valid guess\n\n");
+    int round_number = 0;
     while (attempts_left > 0) {
+        printf("\n---\nRound %d\n\n", round_number);
+        round_number++;
         char guess[CODE_LENGTH+2];
-        //printf("\nPlease enter a valid guess: ");
-
+        int num_read = read(STDIN_FILENO, guess, CODE_LENGTH+2);
+        // Check for end-of-file
+        if (num_read == 0) {
+            printf("\nExit\n");
+            exit(0);
+        }
         // Check the validity of the input
-        if (read(STDIN_FILENO, guess, CODE_LENGTH+2) < CODE_LENGTH+1 || guess[CODE_LENGTH] != '\n' || validate_input(guess) != 0) {
+        if (num_read < CODE_LENGTH+1 || guess[CODE_LENGTH] != '\n' || validate_input(guess) != 0) {
             fprintf(stderr, "Wrong input!\n");
+            printf("Please enter a valid guess");
             continue;
         }
-
         // The input is valid, proceed with the game logic
         int well_placed = count_well_placed(guess, code);
         int misplaced = count_misplaced(guess, code);
-        printf("Well placed pieces: %d\nMisplaced pieces: %d\n", well_placed, misplaced);
         if(well_placed == CODE_LENGTH){
-            printf("Congratz! You did it!");
+            printf("\nCongratz! You did it!\n");
             exit(0);
-        }
-        printf("Please enter a valid guess:\n");
+        } 
+        printf("Well placed pieces:%d\n", well_placed);
+        printf("Misplaced pieces:%d\n", misplaced);
+        printf("Please enter a valid guess\n");
         attempts_left--;
     }
 
     printf("Sorry, you ran out of attempts. The secret code was %s.\n", code);
-
-return 0;
+    return 0;
 }
