@@ -32,7 +32,6 @@ int validate_input(char* input_str) {
             return -1;
         }
     }
-    
     return 0;
 }
 
@@ -85,13 +84,12 @@ int main(int argc, char** argv) {
     printf("\n---\nRound %d\n\n", round_number);
     round_number++;
 
-// Read input character by character and concatenate them to a string
-char guess[CODE_LENGTH+2] = {0};
-int num_read = 0;
-char c;
+    // Read input character by character and concatenate them to a string
+    char guess[CODE_LENGTH+2] = {0};
+    int num_read = 0;
+    char c;
     do {
         if (read(STDIN_FILENO, &c, 1) != 1) {
-        printf("\nExit\n");
         exit(0);
         }
         if (num_read < CODE_LENGTH+1) {
@@ -102,21 +100,19 @@ char c;
     // Check the validity of the input
     if (num_read != CODE_LENGTH+1 || validate_input(guess) != 0) {
         fprintf(stderr, "Wrong input!\n");
-        printf("Please enter a valid guess\n");
+        // printf("Please enter a valid guess\n");
         continue;
     }
     // The input is valid, proceed with the game logic
     int well_placed = count_well_placed(guess, code);
     int misplaced = count_misplaced(guess, code);
-    printf("Well placed pieces: %d\nMisplaced pieces: %d\n", well_placed, misplaced);
-    if (well_placed == CODE_LENGTH && misplaced == 0) {
+     if (well_placed == CODE_LENGTH) {
         printf("Congratz! You did it!");
         exit(0);
     }
-
-    printf("Please enter a valid guess\n");
+    printf("Well placed pieces: %d\nMisplaced pieces: %d\n", well_placed, misplaced);
     attempts_left--;
-}
+    }
 
      if (attempts_left == 0) {
         printf("Sorry, you ran out of attempts. The secret code was %s.\n", code);
@@ -125,15 +121,3 @@ char c;
 
     return 0;
 }
-
-
-    
-
-
-
-
-// if (num_read < CODE_LENGTH+1 || guess[CODE_LENGTH] != '\n' || validate_input(guess) != 0) {
-//             fprintf(stderr, "Wrong input!\n");
-//             //printf("Please enter a valid guess");
-//             continue;
-//         }
